@@ -1,1 +1,90 @@
+function printFolderAndFileNames(){
+  // Get Google Sheet to write the data
+  const googleSheetURL = "https://docs.google.com/spreadsheets/d/1xNQQUAx9xQGwVc-V5HaqyNyzzQ7Jmb4dG_kuFduX0UA/edit?usp=drive_link";
+  const googleSheet = SpreadsheetApp.openByUrl(googleSheetURL);
+  const sheet = googleSheet.getSheetByName("Database");
+
+  // get folder, URL, and file names information
+  let folderIDs = getFolderIDs();
+
+  //iterate to all parent and children folders and write the data to google sheet
+  folderIDs.forEach(folderID => {
+    let rawData = getFoldersAndFilesName(folderID);
+    rawData.childFolders.forEach(folder => {
+      // Join file names array into a single string with newline characters
+      const fileNamesString = folder.fileNames.join("\n");
+      sheet.appendRow([rawData.parent, folder.childFolderName, folder.childFolderURL, fileNamesString]);
+    });
+  })
+}
+
+
+
+function getFoldersAndFilesName(folderID) {
+  // Get the parent folder by its ID
+  const parentFolder = DriveApp.getFolderById(folderID);
+  let dataCollection = {};
+
+  // Get the parent folder's name
+  const parentFolderName = parentFolder.getName();
+  dataCollection.parent = parentFolderName;
+  dataCollection.childFolders = [];
+
+  // Get the child folders within the parent folder
+  const childFolders = parentFolder.getFolders();
+
+  // Iterate through child folders
+  while (childFolders.hasNext()) {
+    let childFolder = childFolders.next();
+    let childData = {
+      childFolderName: childFolder.getName(),
+      childFolderURL : childFolder.getUrl(),
+      fileNames: [],
+    };
+
+    // Get the files within the child folder
+    const files = childFolder.getFiles();
+
+    // Iterate through files within the child folder
+    while (files.hasNext()) {
+      childData.fileNames.push(files.next().getName());
+    }
+
+    //populate data collection
+    dataCollection.childFolders.push(childData);
+  }
+
+  return dataCollection;
+
+}
+
+
+
+function getFolderIDs(){
+  //define parent folder
+  const parentFolderID = "16Td69Io-OOFnwAL_lRZvsjxZ83OTNipe"; //THA 2.0 All Evidence folder's ID
+  
+  // Get the parent folder by its ID
+  const parentFolder = DriveApp.getFolderById(parentFolderID);
+
+  // Get the child of parent folder
+  const childFolders = parentFolder.getFolders();
+
+  //get child folder's ID
+  let folderIDs = [];
+  while(childFolders.hasNext()){
+    let childFolderName = childFolders.next();
+    folderIDs.push(childFolderName.getId());
+  }
+
+  return folderIDs;
+
+}
+
+
+
+
+
+
+
 
